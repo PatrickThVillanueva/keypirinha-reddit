@@ -68,9 +68,10 @@ class reddit(kp.Plugin):
                 continue
 
             subreddit_name = config_section[len("r/"):]
+            self.info("Favorite added: " + subreddit_name)
             data = self.reddit_request(self.URL_SEARCH_SUBREDDITS, subreddit_name, 1)
             cur = data['data']['children'][0]['data']
-            icon = self.subreddit_icon_or_default(subreddit_name, cur, True)
+            icon = self.subreddit_icon_or_default(cur, True)
             items.append(self.create_item(
                 category=kp.ItemCategory.KEYWORD,
                 label="r/{}".format(subreddit_name),
@@ -80,7 +81,7 @@ class reddit(kp.Plugin):
                 args_hint=kp.ItemArgsHint.REQUIRED,
                 hit_hint=kp.ItemHitHint.NOARGS))
 
-        return items
+        return reversed(items)
 
     def _popular_suggestions(self):
         suggestions = []
@@ -88,7 +89,7 @@ class reddit(kp.Plugin):
         elements = data['data']['children']
         for e in range(len(elements)):
             cur = elements[e]['data']
-            icon = self.subreddit_icon_or_default(e, cur, True)
+            icon = self.subreddit_icon_or_default(cur, True)
             suggestions.append(self.create_item(
                     category=self.ITEMCAT_RESULT,
                     label=cur['display_name_prefixed'],
@@ -119,7 +120,6 @@ class reddit(kp.Plugin):
             )]
         self.set_actions(self.ITEMCAT_RESULT, actions)
         self._popular_suggestions()
-        self._load_settings()
         pass
 
     def on_catalog(self):
@@ -187,7 +187,7 @@ class reddit(kp.Plugin):
             
             for e in range(len(elements)):
                 cur = elements[e]['data']
-                icon = self.subreddit_icon_or_default(cur['display_name'], cur, False)
+                icon = self.subreddit_icon_or_default(cur, False)
                 suggestions.append(self.create_item(
                     category=self.ITEMCAT_RESULT,
                     label=cur['display_name_prefixed'],
@@ -235,9 +235,9 @@ class reddit(kp.Plugin):
 
         return data
 
-    def subreddit_icon_or_default(self, subreddit_name, cur, favorites_list):
+    def subreddit_icon_or_default(self, cur, favorites_list):
         if ((favorites_list or not self.USER_SETTING_FAST_LOAD) and cur['icon_img'] is not None and cur['icon_img'] != ''):
-            file_name = "{}{}.jpg".format(subreddit_name, cur['display_name'])
+            file_name = "{}.jpg".format(cur['display_name'])
             icon_source = "{}/{}".format(self.CACHE, file_name)
             cache_icon = os.path.join(self.PREVIEW_PATH, file_name)
             if (not os.path.exists(cache_icon)):
