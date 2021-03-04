@@ -11,10 +11,6 @@ import subprocess
 import html
 
 class reddit(kp.Plugin):
-    """
-    View popular subreddits, or search for particular subreddits or users.
-    """
-    
     ITEMCAT_RESULT = kp.ItemCategory.USER_BASE + 1
     # ITEMCAT_OPEN_BROWSER = kp.ItemCategory.USER_BASE + 2
 
@@ -33,6 +29,9 @@ class reddit(kp.Plugin):
     DEFAULT_SETTING_FAST_LOAD = False
     USER_SETTING_FAST_LOAD = DEFAULT_SETTING_FAST_LOAD
 
+    DEFAULT_SETTING_NSWF = False
+    USER_SETTING_NSWF = DEFAULT_SETTING_NSWF
+
     DEFAULT_SETTING_LISTING = "hot"
     USER_SETTING_LISTING = DEFAULT_SETTING_LISTING
     LISTING_SETTINGS = ["hot", "best", "new", "rising"]
@@ -47,11 +46,17 @@ class reddit(kp.Plugin):
             self.DEFAULT_SETTING_FAST_LOAD
         )
 
+        self.USER_SETTING_NSWF = settings.get_bool(
+            "show_nswf", "main",
+            self.DEFAULT_SETTING_NSWF
+        )
+
         self.USER_SETTING_LISTING = settings.get_enum("listing", "main", fallback=self.DEFAULT_SETTING_LISTING, enum=self.LISTING_SETTINGS)
         if (self.USER_SETTING_LISTING not in self.LISTING_SETTINGS):
             self.USER_SETTING_LISTING = self.DEFAULT_SETTING_LISTING
 
         self.info("Fast Load: " + str(self.USER_SETTING_FAST_LOAD))
+        self.info("Show NSWF: " + str(self.USER_SETTING_NSWF))
         self.info("Listing Setting: " + str(self.USER_SETTING_LISTING))
         pass
 
@@ -269,7 +274,7 @@ class reddit(kp.Plugin):
             params = urllib.parse.urlencode({
                 "q": input,
                 "limit": limit,
-                "include_over_18": True
+                "include_over_18": self.USER_SETTING_NSWF
             })
             request = urllib.request.Request("{}?{}".format(url, params))
 
