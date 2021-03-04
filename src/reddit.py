@@ -171,7 +171,7 @@ class reddit(kp.Plugin):
                         category=self.ITEMCAT_RESULT,
                         label=cur['title'],
                         short_desc=html.unescape(cur['selftext']),
-                        target=cur['url'],
+                        target='https://www.reddit.com'+(cur['permalink']),
                         args_hint=kp.ItemArgsHint.FORBIDDEN,
                         hit_hint=kp.ItemHitHint.IGNORE))
             
