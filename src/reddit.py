@@ -63,7 +63,7 @@ class reddit(kp.Plugin):
         items = []
         sections = self.load_settings().sections()
         for config_section in sections:
-            if not config_section.lower().startswith("r/"):
+            if config_section.startswith("#") or not config_section.lower().startswith("r/"):
                 continue
 
             subreddit_name = config_section[len("r/"):]
@@ -122,10 +122,10 @@ class reddit(kp.Plugin):
         pass
 
     def on_catalog(self):
+        catalog = []
         self._load_settings()
         self._popular_suggestions()
-
-        catalog = []
+        self.set_catalog(catalog)
         catalog.append(self.create_item(
             category=kp.ItemCategory.KEYWORD,
             label="r/Popular",
