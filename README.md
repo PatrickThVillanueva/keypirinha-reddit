@@ -7,7 +7,7 @@ This is a plugin for the
 
 Download `.keypirinha-package` file, which can be
 downloaded here:
-https://github.com/PatrickThVillanueva/keypirinha-reddit/raw/main/release/reddit.keypirinha-package
+https://github.com/PatrickThVillanueva/keypirinha-reddit/tree/main/release
 
 ## Install
 
