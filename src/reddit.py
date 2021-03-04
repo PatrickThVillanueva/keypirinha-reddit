@@ -88,31 +88,15 @@ class reddit(kp.Plugin):
         elements = data['data']['children']
         for e in range(len(elements)):
             cur = elements[e]['data']
-            if (cur['icon_img'] is not None and cur['icon_img'] != ''):
-                file_name = "{}{}.jpg".format(e, cur['display_name'])
-                icon_source = "{}/{}".format(self.CACHE, file_name)
-                cache_icon = os.path.join(self.PREVIEW_PATH, file_name)
-                with self.opener.open(cur['icon_img']) as resp, open(cache_icon, 'w+b') as fp:
-                    fp.write(resp.read())
-
-                suggestions.append(self.create_item(
-                        category=self.ITEMCAT_RESULT,
-                        label=cur['display_name_prefixed'],
-                        short_desc=html.unescape(cur['title']),
-                        target='https://www.reddit.com'+(cur['url']),
-                        icon_handle=self.load_icon(icon_source),
-                        args_hint=kp.ItemArgsHint.FORBIDDEN,
-                        hit_hint=kp.ItemHitHint.IGNORE))
-            else:
-                suggestions.append(self.create_item(
-                        category=self.ITEMCAT_RESULT,
-                        label=cur['display_name_prefixed'],
-                        short_desc=html.unescape(cur['title']),
-                        target='https://www.reddit.com'+(cur['url']),
-                        icon_handle=self.load_icon(self.logo),
-                        args_hint=kp.ItemArgsHint.FORBIDDEN,
-                        hit_hint=kp.ItemHitHint.IGNORE))
-
+            icon = self.subreddit_icon_or_default(e, cur, True)
+            suggestions.append(self.create_item(
+                    category=self.ITEMCAT_RESULT,
+                    label=cur['display_name_prefixed'],
+                    short_desc=html.unescape(cur['title']),
+                    target='https://www.reddit.com'+(cur['url']),
+                    icon_handle=icon,
+                    args_hint=kp.ItemArgsHint.FORBIDDEN,
+                    hit_hint=kp.ItemHitHint.IGNORE))
         self.local_popular = suggestions
         pass
 
@@ -196,40 +180,25 @@ class reddit(kp.Plugin):
             
             self.set_suggestions(suggestions, kp.Match.ANY, kp.Sort.NONE)
         else:
+            if (len(user_input) == 0):
+                return
+
             suggestions = []
             data = self.reddit_request(self.URL_SEARCH_SUBREDDITS, user_input, 25)
             elements = data['data']['children']
             
             for e in range(len(elements)):
                 cur = elements[e]['data']
-
-                if (not self.USER_SETTING_FAST_LOAD and cur['icon_img'] is not None and cur['icon_img'] != ''):
-                    file_name = "{}{}.jpg".format(e, cur['display_name'])
-                    icon_source = "{}/{}".format(self.CACHE, file_name)
-                    cache_icon = os.path.join(self.PREVIEW_PATH, file_name)
-
-                    if (not os.path.exists(cache_icon)):
-                        with self.opener.open(cur['icon_img']) as resp, open(cache_icon, 'w+b') as fp:
-                            fp.write(resp.read())
-
-                    suggestions.append(self.create_item(
-                            category=self.ITEMCAT_RESULT,
-                            label=cur['display_name_prefixed'],
-                            short_desc=html.unescape(cur['title']),
-                            target='https://www.reddit.com'+(cur['url']),
-                            icon_handle=self.load_icon(icon_source),
-                            args_hint=kp.ItemArgsHint.FORBIDDEN,
-                            hit_hint=kp.ItemHitHint.IGNORE))
-                else:
-                    suggestions.append(self.create_item(
-                            category=self.ITEMCAT_RESULT,
-                            label=cur['display_name_prefixed'],
-                            short_desc=html.unescape(cur['title']),
-                            target='https://www.reddit.com'+(cur['url']),
-                            icon_handle=self.load_icon(self.logo),
-                            args_hint=kp.ItemArgsHint.FORBIDDEN,
-                            hit_hint=kp.ItemHitHint.IGNORE))
-            
+                icon = self.subreddit_icon_or_default(cur['display_name'], cur, False)
+                suggestions.append(self.create_item(
+                    category=self.ITEMCAT_RESULT,
+                    label=cur['display_name_prefixed'],
+                    short_desc=html.unescape(cur['title']),
+                    target='https://www.reddit.com'+(cur['url']),
+                    icon_handle=icon,
+                    args_hint=kp.ItemArgsHint.FORBIDDEN,
+                    hit_hint=kp.ItemHitHint.IGNORE))
+                
             self.set_suggestions(suggestions, kp.Match.ANY, kp.Sort.NONE)
         pass
 
@@ -273,8 +242,9 @@ class reddit(kp.Plugin):
             file_name = "{}{}.jpg".format(subreddit_name, cur['display_name'])
             icon_source = "{}/{}".format(self.CACHE, file_name)
             cache_icon = os.path.join(self.PREVIEW_PATH, file_name)
-            with self.opener.open(cur['icon_img']) as resp, open(cache_icon, 'w+b') as fp:
-                fp.write(resp.read())
+            if (not os.path.exists(cache_icon)):
+                with self.opener.open(cur['icon_img']) as resp, open(cache_icon, 'w+b') as fp:
+                    fp.write(resp.read())
 
             return self.load_icon(icon_source)
 
