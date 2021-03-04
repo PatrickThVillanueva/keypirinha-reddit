@@ -94,12 +94,8 @@ class reddit(kp.Plugin):
         return items
 
     def _popular_suggestions(self):
-        request = urllib.request.Request(self.URL_POPULAR_SUBREDDITS)
-        request.add_header("User-Agent", "Mozilla/5.0")
-        with urllib.request.urlopen(request) as response:
-            data = json.loads(response.read())
-
         suggestions = []
+        data = self.reddit_request(self.URL_POPULAR_SUBREDDITS, '', 25)
         elements = data['data']['children']
         for e in range(len(elements)):
             cur = elements[e]['data']
@@ -280,13 +276,15 @@ class reddit(kp.Plugin):
         pass
 
     def reddit_request(self, url, input, limit):
-        params = urllib.parse.urlencode({
-            "q": input,
-            "limit": limit,
-            "include_over_18": True
-        })
+        request = urllib.request.Request(url)
+        if (input is not None and input != ''):
+            params = urllib.parse.urlencode({
+                "q": input,
+                "limit": limit,
+                "include_over_18": True
+            })
+            request = urllib.request.Request("{}?{}".format(url, params))
 
-        request = urllib.request.Request("{}?{}".format(url, params))
         request.add_header("User-Agent", "Mozilla/5.0")
         with urllib.request.urlopen(request) as response:
             data = json.loads(response.read())
