@@ -192,10 +192,7 @@ class reddit(kp.Plugin):
         elif (self.TARGET_FAVORITE in items_chain[-1].target()):
             suggestions = []
             name = items_chain[-1].target()[len(self.TARGET_FAVORITE + "/"):]
-            request = urllib.request.Request("{}".format(self.URL_POPULAR_IN.format(name = name, listing = self.USER_SETTING_LISTING)))
-            request.add_header("User-Agent", "Mozilla/5.0")
-            with urllib.request.urlopen(request) as response:
-                data = json.loads(response.read())
+            data = self.reddit_request(self.URL_POPULAR_IN.format(name = name, listing = self.USER_SETTING_LISTING), '', 25)
             elements = data['data']['children']
 
             for e in range(len(elements)):
@@ -210,17 +207,8 @@ class reddit(kp.Plugin):
             
             self.set_suggestions(suggestions, kp.Match.ANY, kp.Sort.NONE)
         else:
-            elements = []
             suggestions = []
-            params = urllib.parse.urlencode({
-                "q": user_input,
-                "limit": 25,
-                "include_over_18": True
-            })
-            request = urllib.request.Request("{}?{}".format(self.URL_SEARCH_SUBREDDITS, params))
-            request.add_header("User-Agent", "Mozilla/5.0")
-            with urllib.request.urlopen(request) as response:
-                data = json.loads(response.read())
+            data = self.reddit_request(self.URL_SEARCH_SUBREDDITS, user_input, 25)
             elements = data['data']['children']
             
             for e in range(len(elements)):
