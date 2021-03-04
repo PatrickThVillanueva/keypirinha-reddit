@@ -19,6 +19,7 @@ if "%1"=="help" (
 )
 
 if "%BUILD_DIR%"=="" set BUILD_DIR=%~dp0build
+if "%RELEASE_DIR%"=="" set RELEASE_DIR=%~dp0release
 if "%KEYPIRINHA_SDK%"=="" (
     echo ERROR: Keypirinha SDK environment not setup.
     echo        Run SDK's "kpenv" script and try again.
@@ -35,6 +36,16 @@ if "%1"=="build" (
     pushd "%~dp0"
     call "%KEYPIRINHA_SDK%\cmd\kparch" ^
         "%BUILD_DIR%\%PACKAGE_NAME%.keypirinha-package" ^
+        -r LICENSE* README* src
+    popd
+    goto end
+)
+
+if "%1"=="release" (
+    if not exist "%RELEASE_DIR%" mkdir "%RELEASE_DIR%"
+    pushd "%~dp0"
+    call "%KEYPIRINHA_SDK%\cmd\kparch" ^
+        "%RELEASE_DIR%\%PACKAGE_NAME%.keypirinha-package" ^
         -r LICENSE* README* src
     popd
     goto end
