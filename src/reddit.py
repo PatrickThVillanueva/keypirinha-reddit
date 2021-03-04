@@ -73,7 +73,7 @@ class reddit(kp.Plugin):
             icon = self.subreddit_icon_or_default(subreddit_name, cur, True)
             items.append(self.create_item(
                 category=kp.ItemCategory.KEYWORD,
-                label="r/ {}".format(subreddit_name),
+                label="r/{}".format(subreddit_name),
                 short_desc=html.unescape(cur['title']),
                 target=self.TARGET_FAVORITE + "/"+ subreddit_name,
                 icon_handle=icon,
@@ -120,29 +120,28 @@ class reddit(kp.Plugin):
         self.set_actions(self.ITEMCAT_RESULT, actions)
         self._popular_suggestions()
         self._load_settings()
-        self._load_favorites()
         pass
 
     def on_catalog(self):
-        settings = self.load_settings()
-        favorites = self._load_favorites()
-        catalog = []
+        self._load_settings()
+        self._popular_suggestions()
 
+        catalog = []
         catalog.append(self.create_item(
             category=kp.ItemCategory.KEYWORD,
-            label="r/ Popular",
+            label="r/Popular",
             short_desc="Show list of popular subreddits",
             target=self.TARGET_POPULAR,
             icon_handle=self.load_icon(self.logo),
             args_hint=kp.ItemArgsHint.REQUIRED,
             hit_hint=kp.ItemHitHint.NOARGS))
 
-        for favorite in favorites:
+        for favorite in self._load_favorites():
             catalog.append(favorite)
 
         catalog.append(self.create_item(
             category=kp.ItemCategory.KEYWORD,
-            label="r/ ",
+            label="r/",
             short_desc="Search subreddits",
             target=self.TARGET_SEARCH_SUBREDDIT,
             icon_handle=self.load_icon(self.logo),
@@ -150,7 +149,6 @@ class reddit(kp.Plugin):
             hit_hint=kp.ItemHitHint.NOARGS))
 
         self.set_catalog(catalog)
-        self._load_settings()
         pass
 
     def on_suggest(self, user_input, items_chain):
@@ -249,5 +247,3 @@ class reddit(kp.Plugin):
             return self.load_icon(icon_source)
 
         return self.load_icon(self.logo)
-
-        
