@@ -12,7 +12,6 @@ import html
 
 class reddit(kp.Plugin):
     ITEMCAT_RESULT = kp.ItemCategory.USER_BASE + 1
-    # ITEMCAT_OPEN_BROWSER = kp.ItemCategory.USER_BASE + 2
 
     ACTION_OPEN_URL = "open_url"
     ACTION_COPY_URL = "copy_url"
@@ -208,15 +207,6 @@ class reddit(kp.Plugin):
             )
         else:
             kpu.set_clipboard(item.target())
-        pass
-
-    def on_activated(self):
-        pass
-
-    def on_deactivated(self):
-        pass
-
-    def on_events(self, flags):
         pass
 
     def reddit_request(self, url, input, limit):
