@@ -51,7 +51,7 @@ class reddit(kp.Plugin):
             self.DEFAULT_SETTING_NSWF
         )
 
-        self.USER_SETTING_LISTING = settings.get_enum("listing", "main", fallback=self.DEFAULT_SETTING_LISTING, enum=self.LISTING_SETTINGS)
+        self.USER_SETTING_LISTING = settings.get_enum("listing", "main", fallback=self.DEFAULT_SETTING_LISTING, enum=self.LISTING_SETTINGS).lower()
         if (self.USER_SETTING_LISTING not in self.LISTING_SETTINGS):
             self.USER_SETTING_LISTING = self.DEFAULT_SETTING_LISTING
 
@@ -70,31 +70,15 @@ class reddit(kp.Plugin):
             subreddit_name = config_section[len("r/"):]
             data = self.reddit_request(self.URL_SEARCH_SUBREDDITS, subreddit_name, 1)
             cur = data['data']['children'][0]['data']
-            if (cur['icon_img'] is not None and cur['icon_img'] != ''):
-                file_name = "{}{}.jpg".format(subreddit_name, cur['display_name'])
-                icon_source = "{}/{}".format(self.CACHE, file_name)
-                cache_icon = os.path.join(self.PREVIEW_PATH, file_name)
-                with self.opener.open(cur['icon_img']) as resp, open(cache_icon, 'w+b') as fp:
-                    fp.write(resp.read())
-
-                items.append(self.create_item(
-                    category=kp.ItemCategory.KEYWORD,
-                    label="r/ {}".format(subreddit_name),
-                    short_desc=html.unescape(cur['title']),
-                    target=self.TARGET_FAVORITE + "/"+ subreddit_name,
-                    icon_handle=self.load_icon(icon_source),
-                    args_hint=kp.ItemArgsHint.REQUIRED,
-                    hit_hint=kp.ItemHitHint.NOARGS))
-
-            else:
-                items.append(self.create_item(
-                    category=kp.ItemCategory.KEYWORD,
-                    label="r/ {}".format(subreddit_name),
-                    short_desc=html.unescape(cur['title']),
-                    target=self.TARGET_FAVORITE + "/"+ subreddit_name,
-                    icon_handle=self.load_icon(self.logo),
-                    args_hint=kp.ItemArgsHint.REQUIRED,
-                    hit_hint=kp.ItemHitHint.NOARGS))
+            icon = self.subreddit_icon_or_default(subreddit_name, cur, True)
+            items.append(self.create_item(
+                category=kp.ItemCategory.KEYWORD,
+                label="r/ {}".format(subreddit_name),
+                short_desc=html.unescape(cur['title']),
+                target=self.TARGET_FAVORITE + "/"+ subreddit_name,
+                icon_handle=icon,
+                args_hint=kp.ItemArgsHint.REQUIRED,
+                hit_hint=kp.ItemHitHint.NOARGS))
 
         return items
 
@@ -283,3 +267,17 @@ class reddit(kp.Plugin):
             data = json.loads(response.read())
 
         return data
+
+    def subreddit_icon_or_default(self, subreddit_name, cur, favorites_list):
+        if ((favorites_list or not self.USER_SETTING_FAST_LOAD) and cur['icon_img'] is not None and cur['icon_img'] != ''):
+            file_name = "{}{}.jpg".format(subreddit_name, cur['display_name'])
+            icon_source = "{}/{}".format(self.CACHE, file_name)
+            cache_icon = os.path.join(self.PREVIEW_PATH, file_name)
+            with self.opener.open(cur['icon_img']) as resp, open(cache_icon, 'w+b') as fp:
+                fp.write(resp.read())
+
+            return self.load_icon(icon_source)
+
+        return self.load_icon(self.logo)
+
+        
