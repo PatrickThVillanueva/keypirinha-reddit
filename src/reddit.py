@@ -47,39 +47,29 @@ class reddit(kp.Plugin):
             self.DEFAULT_SETTING_FAST_LOAD
         )
 
-        self.USER_SETTING_LISTING = settings.get(
-            "listing", "main",
-            self.DEFAULT_SETTING_LISTING
-        ).lower()
-
-        if (self.USER_SETTING_LISTING not in LISTING_SETTINGS):
+        self.USER_SETTING_LISTING = settings.get_enum("listing", "main", fallback=self.DEFAULT_SETTING_LISTING, enum=self.LISTING_SETTINGS)
+        if (self.USER_SETTING_LISTING not in self.LISTING_SETTINGS):
             self.USER_SETTING_LISTING = self.DEFAULT_SETTING_LISTING
+
+        self.info("Fast Load: " + str(self.USER_SETTING_FAST_LOAD))
+        self.info("Listing Setting: " + str(self.USER_SETTING_LISTING))
         pass
 
     def _load_favorites(self):
         items = []
-        opener = kpnet.build_urllib_opener()
         sections = self.load_settings().sections()
         for config_section in sections:
             if not config_section.lower().startswith("r/"):
                 continue
 
             subreddit_name = config_section[len("r/"):]
-            params = urllib.parse.urlencode({
-                "q": subreddit_name,
-                "limit": 1,
-                "include_over_18": True
-            })
-            request = urllib.request.Request("{}?{}".format(self.URL_SEARCH_SUBREDDITS, params))
-            request.add_header("User-Agent", "Mozilla/5.0")
-            with urllib.request.urlopen(request) as response:
-                data = json.loads(response.read())
+            data = self.reddit_request(self.URL_SEARCH_SUBREDDITS, subreddit_name, 1)
             cur = data['data']['children'][0]['data']
             if (cur['icon_img'] is not None and cur['icon_img'] != ''):
                 file_name = "{}{}.jpg".format(subreddit_name, cur['display_name'])
                 icon_source = "{}/{}".format(self.CACHE, file_name)
                 cache_icon = os.path.join(self.PREVIEW_PATH, file_name)
-                with opener.open(cur['icon_img']) as resp, open(cache_icon, 'w+b') as fp:
+                with self.opener.open(cur['icon_img']) as resp, open(cache_icon, 'w+b') as fp:
                     fp.write(resp.read())
 
                 items.append(self.create_item(
@@ -106,7 +96,6 @@ class reddit(kp.Plugin):
     def _popular_suggestions(self):
         request = urllib.request.Request(self.URL_POPULAR_SUBREDDITS)
         request.add_header("User-Agent", "Mozilla/5.0")
-        opener = kpnet.build_urllib_opener()
         with urllib.request.urlopen(request) as response:
             data = json.loads(response.read())
 
@@ -118,7 +107,7 @@ class reddit(kp.Plugin):
                 file_name = "{}{}.jpg".format(e, cur['display_name'])
                 icon_source = "{}/{}".format(self.CACHE, file_name)
                 cache_icon = os.path.join(self.PREVIEW_PATH, file_name)
-                with opener.open(cur['icon_img']) as resp, open(cache_icon, 'w+b') as fp:
+                with self.opener.open(cur['icon_img']) as resp, open(cache_icon, 'w+b') as fp:
                     fp.write(resp.read())
 
                 suggestions.append(self.create_item(
@@ -146,6 +135,8 @@ class reddit(kp.Plugin):
         self.logo = 'res://%s/%s'%(self.package_full_name(),'reddit.png')
         self.CACHE = "cache://" + self.package_full_name()
         self.PREVIEW_PATH = self.get_package_cache_path(create=True)
+        self.opener = kpnet.build_urllib_opener()
+
         actions = [
             self.create_action(
                 name=self.ACTION_OPEN_URL,
@@ -235,8 +226,7 @@ class reddit(kp.Plugin):
             with urllib.request.urlopen(request) as response:
                 data = json.loads(response.read())
             elements = data['data']['children']
-            opener = kpnet.build_urllib_opener()
-
+            
             for e in range(len(elements)):
                 cur = elements[e]['data']
 
@@ -246,7 +236,7 @@ class reddit(kp.Plugin):
                     cache_icon = os.path.join(self.PREVIEW_PATH, file_name)
 
                     if (not os.path.exists(cache_icon)):
-                        with opener.open(cur['icon_img']) as resp, open(cache_icon, 'w+b') as fp:
+                        with self.opener.open(cur['icon_img']) as resp, open(cache_icon, 'w+b') as fp:
                             fp.write(resp.read())
 
                     suggestions.append(self.create_item(
@@ -288,3 +278,17 @@ class reddit(kp.Plugin):
 
     def on_events(self, flags):
         pass
+
+    def reddit_request(self, url, input, limit):
+        params = urllib.parse.urlencode({
+            "q": input,
+            "limit": limit,
+            "include_over_18": True
+        })
+
+        request = urllib.request.Request("{}?{}".format(url, params))
+        request.add_header("User-Agent", "Mozilla/5.0")
+        with urllib.request.urlopen(request) as response:
+            data = json.loads(response.read())
+
+        return data
