@@ -40,69 +40,6 @@ class reddit(kp.Plugin):
     def __init__(self):
         super().__init__()
 
-    def _load_settings(self):
-        settings = self.load_settings()
-        self.USER_SETTING_FAST_LOAD = settings.get_bool(
-            "fast_load", "main",
-            self.DEFAULT_SETTING_FAST_LOAD
-        )
-
-        self.USER_SETTING_NSWF = settings.get_bool(
-            "show_nswf", "main",
-            self.DEFAULT_SETTING_NSWF
-        )
-
-        self.USER_SETTING_LISTING = settings.get_enum("listing", "main", fallback=self.DEFAULT_SETTING_LISTING, enum=self.LISTING_SETTINGS).lower()
-        if (self.USER_SETTING_LISTING not in self.LISTING_SETTINGS):
-            self.USER_SETTING_LISTING = self.DEFAULT_SETTING_LISTING
-
-        self.info("Fast Load: " + str(self.USER_SETTING_FAST_LOAD))
-        self.info("Show NSWF: " + str(self.USER_SETTING_NSWF))
-        self.info("Listing Setting: " + str(self.USER_SETTING_LISTING))
-        pass
-
-    def _load_favorites(self):
-        items = []
-        sections = self.load_settings().sections()
-        for config_section in sections:
-            if config_section.startswith("#") or not config_section.lower().startswith("r/"):
-                continue
-
-            subreddit_name = config_section[len("r/"):]
-            self.info("Favorite added: " + subreddit_name)
-            data = self.reddit_request(self.URL_SEARCH_SUBREDDITS, subreddit_name, 1)
-            cur = data['data']['children'][0]['data']
-            icon = self.subreddit_icon_or_default(cur, True)
-            items.append(self.create_item(
-                category=kp.ItemCategory.KEYWORD,
-                label="r/{}".format(subreddit_name),
-                short_desc=html.unescape(cur['title']),
-                target=self.TARGET_FAVORITE + "/"+ subreddit_name,
-                icon_handle=icon,
-                args_hint=kp.ItemArgsHint.REQUIRED,
-                hit_hint=kp.ItemHitHint.NOARGS))
-        return items
-
-    def _popular_suggestions(self):
-        suggestions = []
-        data = self.reddit_request(self.URL_POPULAR_SUBREDDITS, '', 25)
-        elements = data['data']['children']
-        for e in range(len(elements)):
-            cur = elements[e]['data']
-            icon = self.subreddit_icon_or_default(cur, True)
-            suggestions.append(self.create_item(
-                    category=self.ITEMCAT_RESULT,
-                    label=cur['display_name_prefixed'],
-                    short_desc=html.unescape(cur['title']),
-                    target='https://www.reddit.com'+(cur['url']),
-                    icon_handle=icon,
-                    args_hint=kp.ItemArgsHint.FORBIDDEN,
-                    hit_hint=kp.ItemHitHint.IGNORE))
-        self.local_popular = suggestions
-        self.last_update = datetime.now()
-        self.info("Popular loaded")
-        pass
-
     def on_start(self):
         self.logo = 'res://%s/%s'%(self.package_full_name(),'reddit.png')
         self.CACHE = "cache://" + self.package_full_name()
@@ -138,7 +75,9 @@ class reddit(kp.Plugin):
             args_hint=kp.ItemArgsHint.REQUIRED,
             hit_hint=kp.ItemHitHint.NOARGS))
 
+        counter = 0
         for favorite in self._load_favorites():
+            counter += 1
             catalog.append(favorite)
 
         catalog.append(self.create_item(
@@ -151,6 +90,7 @@ class reddit(kp.Plugin):
             hit_hint=kp.ItemHitHint.NOARGS))
 
         self.set_catalog(catalog)
+        self.info("Cataloged {} favorites".format(str(counter)))
         pass
 
     def on_suggest(self, user_input, items_chain):
@@ -253,3 +193,61 @@ class reddit(kp.Plugin):
         if (not os.path.exists(cache_icon)):
             return self.load_icon(self.logo)
         return self.load_icon(icon_source)
+
+    
+    def _load_settings(self):
+        settings = self.load_settings()
+        self.USER_SETTING_FAST_LOAD = settings.get_bool(
+            "fast_load", "main",
+            self.DEFAULT_SETTING_FAST_LOAD
+        )
+
+        self.USER_SETTING_NSWF = settings.get_bool(
+            "show_nswf", "main",
+            self.DEFAULT_SETTING_NSWF
+        )
+
+        self.USER_SETTING_LISTING = settings.get_enum("listing", "main", fallback=self.DEFAULT_SETTING_LISTING, enum=self.LISTING_SETTINGS).lower()
+        if (self.USER_SETTING_LISTING not in self.LISTING_SETTINGS):
+            self.USER_SETTING_LISTING = self.DEFAULT_SETTING_LISTING
+        pass
+
+    def _load_favorites(self):
+        items = []
+        sections = self.load_settings().sections()
+        for config_section in sections:
+            if config_section.startswith("#") or not config_section.lower().startswith("r/"):
+                continue
+
+            subreddit_name = config_section[len("r/"):]
+            data = self.reddit_request(self.URL_SEARCH_SUBREDDITS, subreddit_name, 1)
+            cur = data['data']['children'][0]['data']
+            icon = self.subreddit_icon_or_default(cur, True)
+            items.append(self.create_item(
+                category=kp.ItemCategory.KEYWORD,
+                label="r/{}".format(subreddit_name),
+                short_desc=html.unescape(cur['title']),
+                target=self.TARGET_FAVORITE + "/"+ subreddit_name,
+                icon_handle=icon,
+                args_hint=kp.ItemArgsHint.REQUIRED,
+                hit_hint=kp.ItemHitHint.NOARGS))
+        return items
+
+    def _popular_suggestions(self):
+        suggestions = []
+        data = self.reddit_request(self.URL_POPULAR_SUBREDDITS, '', 25)
+        elements = data['data']['children']
+        for e in range(len(elements)):
+            cur = elements[e]['data']
+            icon = self.subreddit_icon_or_default(cur, True)
+            suggestions.append(self.create_item(
+                    category=self.ITEMCAT_RESULT,
+                    label=cur['display_name_prefixed'],
+                    short_desc=html.unescape(cur['title']),
+                    target='https://www.reddit.com'+(cur['url']),
+                    icon_handle=icon,
+                    args_hint=kp.ItemArgsHint.FORBIDDEN,
+                    hit_hint=kp.ItemHitHint.IGNORE))
+        self.local_popular = suggestions
+        self.last_update = datetime.now()
+        pass
