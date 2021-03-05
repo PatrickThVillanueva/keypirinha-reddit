@@ -176,7 +176,7 @@ class reddit(kp.Plugin):
                 cur = elements[e]['data']
                 suggestions.append(self.create_item(
                         category=self.ITEMCAT_RESULT,
-                        label=cur['title'],
+                        label=html.unescape(cur['title']),
                         short_desc=html.unescape(cur['selftext']),
                         icon_handle=self.subreddit_icon_by_name(name),
                         target='https://www.reddit.com'+(cur['permalink']),
@@ -197,7 +197,7 @@ class reddit(kp.Plugin):
                 icon = self.subreddit_icon_or_default(cur, False)
                 suggestions.append(self.create_item(
                     category=self.ITEMCAT_RESULT,
-                    label=cur['display_name_prefixed'],
+                    label=html.unescape(cur['display_name_prefixed']),
                     short_desc=html.unescape(cur['title']),
                     target='https://www.reddit.com'+(cur['url']),
                     icon_handle=icon,

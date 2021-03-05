@@ -29,6 +29,7 @@ Write 'r/' (without quotes), and choose either to search reddits, view most popu
 ### v1.1
 
 * Added subreddit icon to posts from favorites list
+* HTML, unescaping titles and descriptions to make them easier to read.
 
 ### v1.0
 
