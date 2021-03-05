@@ -26,6 +26,10 @@ Write 'r/' (without quotes), and choose either to search reddits, view most popu
 
 ## Change Log
 
+### v1.1
+
+* Added subreddit icon to posts from favorites list
+
 ### v1.0
 
 * Created this plugin
