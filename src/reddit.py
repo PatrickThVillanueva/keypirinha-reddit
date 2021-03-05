@@ -35,6 +35,8 @@ class reddit(kp.Plugin):
     USER_SETTING_LISTING = DEFAULT_SETTING_LISTING
     LISTING_SETTINGS = ["hot", "best", "new", "rising"]
 
+    last_update = None
+
     def __init__(self):
         super().__init__()
 
@@ -79,8 +81,7 @@ class reddit(kp.Plugin):
                 icon_handle=icon,
                 args_hint=kp.ItemArgsHint.REQUIRED,
                 hit_hint=kp.ItemHitHint.NOARGS))
-
-        return reversed(items)
+        return items
 
     def _popular_suggestions(self):
         suggestions = []
@@ -98,6 +99,8 @@ class reddit(kp.Plugin):
                     args_hint=kp.ItemArgsHint.FORBIDDEN,
                     hit_hint=kp.ItemHitHint.IGNORE))
         self.local_popular = suggestions
+        self.last_update = datetime.now()
+        self.info("Popular loaded")
         pass
 
     def on_start(self):
@@ -151,6 +154,10 @@ class reddit(kp.Plugin):
         pass
 
     def on_suggest(self, user_input, items_chain):
+        time_diff = datetime.now() - self.last_update
+        if (time_diff.total_seconds() >= 86400):
+            self._popular_suggestions()
+
         if not items_chain or items_chain[-1].category() != kp.ItemCategory.KEYWORD:
             return
 
@@ -171,12 +178,13 @@ class reddit(kp.Plugin):
                         category=self.ITEMCAT_RESULT,
                         label=cur['title'],
                         short_desc=html.unescape(cur['selftext']),
+                        icon_handle=self.subreddit_icon_by_name(name),
                         target='https://www.reddit.com'+(cur['permalink']),
                         args_hint=kp.ItemArgsHint.FORBIDDEN,
                         hit_hint=kp.ItemHitHint.IGNORE))
             
             self.set_suggestions(suggestions, kp.Match.ANY, kp.Sort.NONE)
-        else:
+        else: #searching for subreddits
             if (len(user_input) == 0):
                 return
 
@@ -237,3 +245,11 @@ class reddit(kp.Plugin):
             return self.load_icon(icon_source)
 
         return self.load_icon(self.logo)
+
+    def subreddit_icon_by_name(self, name):
+        file_name = "{}.jpg".format(name)
+        icon_source = "{}/{}".format(self.CACHE, file_name)
+        cache_icon = os.path.join(self.PREVIEW_PATH, file_name)
+        if (not os.path.exists(cache_icon)):
+            return self.load_icon(self.logo)
+        return self.load_icon(icon_source)
